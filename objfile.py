@@ -1,4 +1,3 @@
-# from audioop import reverse
 import os
 import numpy as np
 from OpenGL.GL import *
@@ -8,8 +7,8 @@ class ObjMaterial(object):
         self.Kd = np.array([1,1,1], 'f')
         self.Ks = np.array([1,1,1], 'f')
         self.Ka = np.array([1,1,1], 'f')
-        self.Ns = 32.0;
-        self.d = 1.0;
+        self.Ns = 32.0
+        self.d = 1.0
 
 class ObjMesh(object):
     def __init__(self,mtlName,positions,normals):
@@ -23,12 +22,12 @@ class ObjMesh(object):
         glBindBuffer(GL_ARRAY_BUFFER , vbo[0])
         glBufferData(GL_ARRAY_BUFFER , np.array(positions,dtype="float32") , GL_STATIC_DRAW)
         glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None);
+        glVertexAttribPointer(0, 3, GL_FLOAT, False, 0, None)
 
         glBindBuffer(GL_ARRAY_BUFFER , vbo[1])
         glBufferData(GL_ARRAY_BUFFER , np.array(normals,dtype="float32") , GL_STATIC_DRAW)
         glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 3, GL_FLOAT, False, 0, None);
+        glVertexAttribPointer(1, 3, GL_FLOAT, False, 0, None)
 
         glBindVertexArray(0)
         glBindBuffer(GL_ARRAY_BUFFER,0)
@@ -54,9 +53,11 @@ class ObjFile(object):
         mtl = None
         with open(fileName, 'r') as file:
             for line in file:
-                if line.startswith('#'): continue
+                if line.startswith('#'): 
+                    continue
                 values = line.split()
-                if not values: continue
+                if not values: 
+                    continue
                 if values[0] == 'newmtl':
                     mtl = ObjMaterial()
                     self.materials[values[1]] = mtl
@@ -73,7 +74,8 @@ class ObjFile(object):
                          mtl.d = float(values[1])
                     
     def createMesh(self,mtlName, positions,normals):
-        if len(positions) < 3: return;
+        if len(positions) < 3: 
+            return
         self.meshs.append(ObjMesh(mtlName,positions,normals))
 
 

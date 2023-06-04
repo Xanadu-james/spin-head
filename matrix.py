@@ -43,3 +43,13 @@ def rotationYMatrix(angle):
     R[2,0] = -s
     R[2,2] = c
     return R
+
+def rotationXMatrix(angle):
+    c = np.cos(angle)
+    s = np.sin(angle)
+    R = np.identity(4,dtype='f')
+    R[1,1] = c
+    R[1,2] = -s
+    R[2,1] = s
+    R[2,2] = c
+    return R

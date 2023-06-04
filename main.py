@@ -22,7 +22,7 @@ ambientLight = np.array([0.1, 0.1, 0.1], 'f')
 diffuseLight = np.array([0.8, 0.8, 0.8], 'f')
 specularLight = np.array([1, 1, 1], 'f')
 
-scaling = 50
+scaling = 1
 worldMatrix = scaleMatrix([scaling,scaling,scaling])
 
 def draw():
@@ -56,12 +56,18 @@ def rotate(x, y):
 
     dx = x - centerX
     dy = y - centerY
+    dz = 500.0
 
-    r = math.sqrt(dx * dx + dy * dy)
-    alpha = math.acos(dy / r)
+    r1 = math.sqrt(dx * dx + dz * dz)
+    r2 = math.sqrt(dy * dy + dz * dz)
+    alpha_y = math.acos(dz / r1)
+    alpha_x = math.acos(dz / r2)
     if dx < 0:
-        alpha = -alpha
-    worldMatrix = np.matmul(scaleMatrix([scaling,scaling,scaling]), rotationYMatrix(alpha))
+        alpha_y = -alpha_y
+    if dy < 0:
+        alpha_x = -alpha_x
+    rotationMatrix = np.matmul(rotationYMatrix(alpha_y), rotationXMatrix(alpha_x))
+    worldMatrix = np.matmul(scaleMatrix([scaling,scaling,scaling]), rotationMatrix)
 
 
 def main():
@@ -81,11 +87,11 @@ def main():
     glEnable(GL_CULL_FACE)
 
     windowWidth, windowHeight = windowSize
-    camera = Camera([0.0, 100.0, 500.0], [0.0, 100.0, 0.0], windowSize)
+    camera = Camera([0.0, 100.0, 500.0], [0.0, 0., 0.0], windowSize)
 
     shader = Shader("./shader/vs.glsl", "./shader/fs.glsl")
     objFile = ObjFile()
-    objFile.load("./res/head.obj")
+    objFile.load("./res/head_new.obj")
 
     clock = pygame.time.Clock()
 
