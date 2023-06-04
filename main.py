@@ -1,32 +1,32 @@
-
 import math
 import numpy as np
-
-from OpenGL.GLUT import *
+import pygame
+from pygame.locals import *
 from OpenGL.GL import *
 from objfile import *
 from shader import *
 from matrix import *
 from camera import *
 
-windowSize = [800,600]
+windowSize = [800, 600]
+window = None
 
 shader = None
 objFile = None
 camera = None
 
-lightDirection = np.array([0,1,1], 'f')
+lightDirection = np.array([0, 1, 1], 'f')
 lightDirection /= np.linalg.norm(lightDirection)
 
-ambientLight = np.array([0.1,0.1,0.1], 'f')
-diffuseLight = np.array([0.8,0.8,0.8], 'f')
-specularLight = np.array([1,1,1], 'f')
+ambientLight = np.array([0.1, 0.1, 0.1], 'f')
+diffuseLight = np.array([0.8, 0.8, 0.8], 'f')
+specularLight = np.array([1, 1, 1], 'f')
 
-
-worldMatrix = np.identity(4,dtype='f')
+scaling = 50
+worldMatrix = scaleMatrix([scaling,scaling,scaling])
 
 def draw():
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glUseProgram(shader.program)
     glUniformMatrix4fv(glGetUniformLocation(shader.program, "worldMatrix"), 1, True, worldMatrix)
     glUniformMatrix4fv(glGetUniformLocation(shader.program, "projMatrix"), 1, True, camera.matProj)
@@ -39,77 +39,70 @@ def draw():
 
     objFile.render(shader.program)
 
-    glutSwapBuffers()
+    pygame.display.flip()
 
-    
+
 def reshape(w, h):
-    windowSize = [w,h]
-    glViewport(0,0,w, h);
+    global windowSize
+    windowSize = [w, h]
+    glViewport(0, 0, w, h)
     camera.resetMatProj(windowSize)
 
-def rotate(x,y):
-    global worldMatrix
-    centerX = windowSize[0]/2
-    centerY = windowSize[1]/2
 
-    dx = x - centerX;
-    dy = y - centerY;
+def rotate(x, y):
+    global worldMatrix
+    centerX = windowSize[0] / 2
+    centerY = windowSize[1] / 2
+
+    dx = x - centerX
+    dy = y - centerY
 
     r = math.sqrt(dx * dx + dy * dy)
     alpha = math.acos(dy / r)
-    if dx < 0: 
+    if dx < 0:
         alpha = -alpha
-    worldMatrix = rotationYMatrix(alpha)
+    worldMatrix = np.matmul(scaleMatrix([scaling,scaling,scaling]), rotationYMatrix(alpha))
 
 
-def mouse(button, state, x, y):
-    rotate(x,y)
+def main():
+    global window, shader, objFile, camera
 
-def mouseMotion(x, y):
-    rotate(x,y)
+    pygame.init()
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, 3)
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, 3)
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK,
+                                    pygame.GL_CONTEXT_PROFILE_CORE)
+    pygame.display.set_mode((640,480), pygame.OPENGL|pygame.DOUBLEBUF)
 
-if __name__ == "__main__":
-    glutInit([])
-
-
-    #glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA)#|GLUT_3_2_CORE_PROFILE)
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA|GLUT_3_2_CORE_PROFILE)
-    glutInitWindowSize(windowSize[0], windowSize[1])
-    glutCreateWindow(b"stage")
-
-    #print(glGetString(GL_VENDOR).decode("utf-8"))
-    #print(glGetString(GL_RENDERER).decode("utf-8"))
-    print(glGetString(GL_VERSION).decode("utf-8"))
-    print(glGetString(GL_SHADING_LANGUAGE_VERSION).decode("utf-8"))
-    #print(glGetIntegerv(GL_NUM_EXTENSIONS))
-    #print(glGetString(GL_EXTENSIONS))
-
-    # glutInitContextVersion(4,3)
-    # glutInitContextProfile(GLUT_CORE_PROFILE)
-    glutDisplayFunc(draw)
-    glutIdleFunc(draw)
-    glutReshapeFunc(reshape)
-    glutMouseFunc(mouse);
-    glutMotionFunc(mouseMotion);
-
-    glClearColor(0.0, 0.0, 0.0, 0.0)
-    glEnable(GL_CULL_FACE)
-    #glDisable(GL_CULL_FACE)
-    #glEnableClientState(GL_VERTEX_ARRAY)
     glEnable(GL_DEPTH_TEST)
-    glDepthFunc(GL_LEQUAL)
-    #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+    glClearColor(0.0, 0.0, 0.0, 1.0)
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glEnable(GL_CULL_FACE)
 
-    windowSize = [glutGet(GLUT_WINDOW_WIDTH),glutGet(GLUT_WINDOW_HEIGHT)]
+    windowWidth, windowHeight = windowSize
+    camera = Camera([0.0, 100.0, 500.0], [0.0, 100.0, 0.0], windowSize)
 
-    camera = Camera([0.0,100.0,500.0],[0.0,100.0,0.0],windowSize)
-
-    shader = Shader("./shader/vs.glsl","./shader/fs.glsl")
+    shader = Shader("./shader/vs.glsl", "./shader/fs.glsl")
     objFile = ObjFile()
     objFile.load("./res/head.obj")
 
-    glutMainLoop()
+    clock = pygame.time.Clock()
 
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                return
+            elif event.type == VIDEORESIZE:
+                reshape(event.w, event.h)
+            elif event.type == MOUSEMOTION:
+                rotate(event.pos[0], event.pos[1])
 
+        draw()
+
+        pygame.display.set_caption("Memoji! - FPS: %.2f" % clock.get_fps())
+        clock.tick(60)
+
+if __name__ == "__main__":
+    main()

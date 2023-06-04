@@ -1,4 +1,4 @@
-from audioop import reverse
+# from audioop import reverse
 import os
 import numpy as np
 from OpenGL.GL import *
